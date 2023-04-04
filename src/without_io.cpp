@@ -8,7 +8,7 @@ static void NoIo_DefineFilterAndHisto(benchmark::State &state) {
   if (n_threads > 0)
     ROOT::EnableImplicitMT(n_threads);
 
-  const auto n_entries = 1000000000ull;
+  const auto n_entries = 100000000ull;
 
   ROOT::RDataFrame df(n_entries);
 
