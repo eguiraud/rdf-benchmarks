@@ -1,9 +1,18 @@
 #include <ROOT/RDataFrame.hxx>
+#include <ROOT/RLogger.hxx>
 
-#include "benchmark/benchmark.h"
+#include <string>
 
-static void NoIo_DefineFilterAndHisto(benchmark::State &state) {
-  const auto n_threads = state.range(0);
+int main(int argc, char **argv) {
+  if (argc < 2) {
+    std::cerr << "Usage: " << argv[0] << " <n_threads>\n";
+    return 1;
+  }
+
+  auto verbosity = ROOT::Experimental::RLogScopedVerbosity(
+      ROOT::Detail::RDF::RDFLogChannel(), ROOT::Experimental::ELogLevel::kInfo);
+
+  const auto n_threads = std::stoi(argv[1]);
 
   if (n_threads > 0)
     ROOT::EnableImplicitMT(n_threads);
@@ -18,12 +27,6 @@ static void NoIo_DefineFilterAndHisto(benchmark::State &state) {
                    {"h", "h", 100, 0., 1.},
                    "x"); // passing binning explicitly is better for performance
 
-  for (auto _ : state) {
-    // event loop runs here
-    // N.B. it does not make sense to have more than 1 iteration!
-    h.GetValue();
-  }
+  // event loop runs here
+  h.GetValue();
 }
-BENCHMARK(NoIo_DefineFilterAndHisto);
-
-BENCHMARK_MAIN();
