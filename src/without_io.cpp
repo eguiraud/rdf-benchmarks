@@ -1,7 +1,16 @@
 #include <ROOT/RDataFrame.hxx>
 #include <ROOT/RLogger.hxx>
 
+#include <cstdlib> // std::abort
+#include <random>
 #include <string>
+
+struct SimpleRNG {
+  std::mt19937 fDist{std::random_device()()};
+  std::uniform_real_distribution<> fGen{0., 1.};
+
+  double operator()() { return fGen(fDist); }
+};
 
 int main(int argc, char **argv) {
   if (argc < 2) {
@@ -12,7 +21,7 @@ int main(int argc, char **argv) {
   auto verbosity = ROOT::Experimental::RLogScopedVerbosity(
       ROOT::Detail::RDF::RDFLogChannel(), ROOT::Experimental::ELogLevel::kInfo);
 
-  const auto n_threads = std::stoi(argv[1]);
+  const unsigned n_threads = std::stoi(argv[1]);
 
   if (n_threads > 0)
     ROOT::EnableImplicitMT(n_threads);
@@ -21,7 +30,10 @@ int main(int argc, char **argv) {
 
   ROOT::RDataFrame df(n_entries);
 
-  auto h = df.DefineSlot("x", [](unsigned int slot) { return slot / 10.; })
+  // one rng per processing slot (all with the same seed for simplicity)
+  std::vector<SimpleRNG> rnds(std::max(n_threads, 1u));
+
+  auto h = df.DefineSlot("x", [&](unsigned int slot) { return rnds[slot](); })
                .Filter([](double x) { return x > 0.5; }, {"x"})
                .Histo1D<double>(
                    {"h", "h", 100, 0., 1.},
@@ -29,4 +41,11 @@ int main(int argc, char **argv) {
 
   // event loop runs here
   h.GetValue();
+
+  const double expected = 0.75;
+  if (h->GetMean() - expected > 1e-4) {
+    std::cerr << "Sanity check failed: histogram mean is " << h->GetMean()
+              << " instead of " << expected << '\n';
+    std::abort();
+  }
 }
