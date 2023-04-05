@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
   h.GetValue(); // event loop runs here
 
   const double expected = 34.7494;
-  if (h->GetMean() - expected > 1e-5) {
+  if (std::abs(h->GetMean() - expected) > 1e-5) {
     std::cerr << "Sanity check failed: histogram mean is " << h->GetMean()
               << " instead of " << expected << '\n';
     std::abort();
