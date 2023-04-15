@@ -1,7 +1,9 @@
 tags
 build/
+build-*/
 .cache
 compile_commands.json
 *.swp
 install/
 data
+.gdb_history
