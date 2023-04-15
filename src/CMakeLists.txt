@@ -14,4 +14,8 @@ add_executable(just_reading_arrays just_reading_arrays.cpp)
 target_link_libraries(just_reading_arrays PRIVATE ROOT::ROOTDataFrame)
 install(TARGETS just_reading_arrays RUNTIME)
 
+add_executable(just_reading_scalars just_reading_scalars.cpp)
+target_link_libraries(just_reading_scalars PRIVATE ROOT::ROOTDataFrame)
+install(TARGETS just_reading_scalars RUNTIME)
+
 install(FILES run.fish TYPE BIN PERMISSIONS OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE)
