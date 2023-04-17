@@ -5,13 +5,21 @@
 // Input data can be downloaded from
 // root://eospublic.cern.ch//eos/opendata/cms/derived-data/AOD2NanoAODOutreachTool/Run2012BC_DoubleMuParked_Muons.root
 
-#include "ROOT/RDataFrame.hxx"
+#include <ROOT/RDataFrame.hxx>
+#include <ROOT/RNTupleDS.hxx>
 #include "ROOT/RVec.hxx"
 #include <ROOT/RLogger.hxx>
 
 #include <cstdlib> // std::abort
 #include <iostream>
 #include <string>
+
+ROOT::RDataFrame MakeRDF(const std::string &fname) {
+  if (fname.size() >= 8 && fname.substr(fname.size() - 7) == ".ntuple")
+    return ROOT::RDF::Experimental::FromRNTuple("Events", fname);
+  else
+    return ROOT::RDataFrame("Events", fname);
+}
 
 int main(int argc, char **argv) {
   if (argc < 3) {
@@ -28,7 +36,7 @@ int main(int argc, char **argv) {
     ROOT::EnableImplicitMT(n_threads);
 
   const std::string fname = argv[2];
-  ROOT::RDataFrame df("Events", fname);
+  auto df = MakeRDF(fname);
 
   auto df_2mu = df.Filter([](unsigned nMuon) { return nMuon == 2; }, {"nMuon"});
   auto df_os = df_2mu.Filter(
