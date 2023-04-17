@@ -27,8 +27,7 @@ int main(int argc, char **argv) {
   if (n_threads > 0)
     ROOT::EnableImplicitMT(n_threads);
 
-  const std::string fname =
-      argv[2] + std::string("/Run2012BC_DoubleMuParked_Muons.root");
+  const std::string fname = argv[2];
   ROOT::RDataFrame df("Events", fname);
 
   auto df_2mu = df.Filter([](unsigned nMuon) { return nMuon == 2; }, {"nMuon"});
