@@ -6,15 +6,34 @@ A collection of RDataFrame benchmarks.
 
 - [X] **without_io**: simple benchmarks with no input files
 - [X] **just_reading_arrays**: simple benchmark that reads an array of floats from an input file
-- [X] **dimuonanalysis**: simple analysis task from [the RDF tutorials](https://root.cern/doc/master/group__tutorial__dataframe.html)
-- [ ] **rntuple**: rntuple+RDF benchmarks extracted from https://github.com/jblomer/iotools
-- [ ] **adl_benchmarks**: the RDF implementation of [the ADL benchmarks](https://github.com/iris-hep/adl-benchmarks-index), running on 10x input data
-- [ ] **agc_ttbar**: the RDF implementation of the ttbar analysis task from the [analysis grand challenge](https://github.com/iris-hep/analysis-grand-challenge)
+- [X] **dimuonanalysis**: simple analysis task from [the RDF tutorials](https://root.cern/doc/master/group__tutorial__dataframe.html); if the file name ends with `.ntuple`, it switches to `RNTuple` as a backend
+- [ ] **agc_ttbar**: the RDF implementation of the ttbar analysis task from the [analysis grand challenge](https://github.com/iris-hep/analysis-grand-challenge) -- still to be added
+
+## Examples
+
+### Building the project
+
+```
+$ mkdir build
+$ cmake -S . -B build -G Ninja -DCMAKE_INSTALL_PREFIX=build/install -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CXX_FLAGS="-fno-omit-frame-pointer"
+$ cmake --build build -- -j16 install
+```
+
+### Running the dimuon analysis
+
+```
+$ ./build/install/bin/dimuonanalysis 0 ./data/Run2012BC_DoubleMuParked_Muons.root
+```
+
+### Creating a zstd-compressed RNTuple input from the TTree input
+
+```
+$ ./build/install/bin/tree2ntuple data/Run2012BC_DoubleMuParked_Muons.root data/Run2012BC_DoubleMuParked_Muons.zstd.ntuple Events 505
+```
 
 ## Input datasets
 
-Several benchmarks require (possibly large) input files.
-They are searched for in the directory pointed by the environment variable `RDF_BENCHMARKS_DATA_DIR` or `$PWD/data` as a fallback.
+Several benchmarks require (possibly large) input files. The benchmark's source code has an introduction that indicates where to download the input data from.
 
 ## Attribution and code duplication
 
