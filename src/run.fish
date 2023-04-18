@@ -1,4 +1,7 @@
 #!/usr/bin/fish
+#
+# A fish script to run the benchmarks and extract timings from the RDF logs.
+# Expects to live alongside the benchmark binaries.
 
 ###### CONFIGURATION #####
 set THREAD_COUNTS 0 2 4
@@ -68,4 +71,4 @@ end
 set WORKDIR (status dirname)
 set DATA_DIR (get_data_dir)
 run_bench without_io
-run_bench dimuonanalysis $DATA_DIR
+run_bench dimuonanalysis $DATA_DIR/data/Run2012BC_DoubleMuParked_Muons.zstd.root
