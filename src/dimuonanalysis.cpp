@@ -50,7 +50,7 @@ void InvMassBulkIgnoreMaskCustomSinH(
     const ROOT::RVec<ROOT::RVec<T>> &etas,
     const ROOT::RVec<ROOT::RVec<T>> &phis,
     const ROOT::RVec<ROOT::RVec<T>> &masses,
-    const ROOT::RVec<unsigned int> &sizes) {
+    const ROOT::RVec<std::size_t> &sizes) {
 
   const auto bulkSize = eventMask.Size();
   const auto nElements =
@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
   const std::string fname = argv[2];
   auto df = MakeRDF(fname, argc == 5 ? std::stoull(argv[4]) : -1);
 
-  auto df_2mu = df.Filter([](unsigned nMuon) { return nMuon == 2; }, {"nMuon"});
+  auto df_2mu = df.Filter([](std::size_t nMuon) { return nMuon == 2; }, {"nMuon"});
   auto df_os = df_2mu.Filter(
       [](const ROOT::RVecI &charges) { return charges[0] != charges[1]; },
       {"Muon_charge"});
