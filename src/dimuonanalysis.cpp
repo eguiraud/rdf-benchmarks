@@ -33,10 +33,50 @@ ROOT::RDataFrame MakeRDF(const std::string &fname, long int maxBulkSize = -1) {
   (void)maxBulkSize;
 }
 
-// A custom sinh implementation (faster than the one from glibc)
-template <typename T> T SimpleSinh(T x) {
-  const auto e = std::exp(x);
-  return 0.5f * (e - 1.f / e);
+// Contributed by @hahnjo at https://github.com/eguiraud/invmass-bench/pull/2
+// WARNING: This Sincos calculation has reduced precision w.r.t. the builtin
+// sincos and might behave badly for arbitrary arguments.
+static void SincosPowerSeries(float x, float &sin, float &cos) {
+  const auto x2 = x * x;
+  const auto t2 = x2 * (1.f / 2.f);
+  const auto x3 = x2 * x;
+  const auto t3 = x3 * (1.f / 6.f);
+  const auto x4 = x3 * x;
+  const auto t4 = x4 * (1.f / 24.f);
+  const auto x5 = x4 * x;
+  const auto t5 = x5 * (1.f / 120.f);
+  const auto x6 = x5 * x;
+  const auto t6 = x6 * (1.f / 720.f);
+  const auto x7 = x6 * x;
+  const auto t7 = x7 * (1.f / 5040.f);
+  const auto x8 = x7 * x;
+  const auto t8 = x8 * (1.f / 40320.f);
+  const auto x9 = x8 * x;
+  const auto t9 = x9 * (1.f / 362880.f);
+  const auto x10 = x9 * x;
+  const auto t10 = x10 * (1.f / 3628800.f);
+  const auto x11 = x10 * x;
+  const auto t11 = x11 * (1.f / 39916800.f);
+
+  sin = x - t3 + t5 - t7 + t9 - t11;
+  cos = 1 - t2 + t4 - t6 + t8 - t10;
+}
+
+// Contributed by @hahnjo at https://github.com/eguiraud/invmass-bench/pull/2
+// WARNING: This Sinh calculation has reduced precision w.r.t. std::sinh
+// and might behave badly for arbitrary arguments.
+static float SinhPowerSeries(float x) {
+  const auto x2 = x * x;
+  const auto x3 = x2 * x;
+  const auto t3 = x3 * (1.f / 6.f);
+  const auto x5 = x3 * x2;
+  const auto t5 = x5 * (1.f / 120.f);
+  const auto x7 = x5 * x2;
+  const auto t7 = x7 * (1.f / 5040.f);
+  const auto x9 = x7 * x2;
+  const auto t9 = x9 * (1.f / 362880.f);
+
+  return x + t3 + t5 + t7 + t9;
 }
 
 // An invariant mass calculation optimized for working on bulk of events.
@@ -44,7 +84,7 @@ template <typename T> T SimpleSinh(T x) {
 // actually point to a contiguous slab of memory (which is the case for
 // branches for which branch->SupportsBulk() returns true).
 template <typename T>
-void InvMassBulkIgnoreMaskCustomSinH(
+void InvMassBulkIgnoreMaskPowerSeries(
     const ROOT::RDF::Experimental::REventMask &eventMask,
     ROOT::RVec<T> &results, const ROOT::RVec<ROOT::RVec<T>> &pts,
     const ROOT::RVec<ROOT::RVec<T>> &etas,
@@ -76,9 +116,11 @@ void InvMassBulkIgnoreMaskCustomSinH(
       for (std::size_t j = 0u; j < size; ++j) {
         const auto pt_ = pt[elementIdx + j];
         const auto phi_ = phi[elementIdx + j];
-        xs[elementIdx + j] = pt_ * std::cos(phi_);
-        ys[elementIdx + j] = pt_ * std::sin(phi_);
-        zs[elementIdx + j] = pt_ * SimpleSinh(eta[elementIdx + j]);
+        T sin, cos;
+        SincosPowerSeries(phi_, sin, cos);
+        xs[elementIdx + j] = pt_ * cos;
+        ys[elementIdx + j] = pt_ * sin;
+        zs[elementIdx + j] = pt_ * SinhPowerSeries(eta[elementIdx + j]);
       }
     }
     elementIdx += size;
@@ -145,7 +187,7 @@ int main(int argc, char **argv) {
   auto df_mass =
       argc >= 4 && bool(std::stoi(argv[3]))
           ? df_os.Define(
-                "Dimuon_mass", InvMassBulkIgnoreMaskCustomSinH<float>,
+                "Dimuon_mass", InvMassBulkIgnoreMaskPowerSeries<float>,
                 {"Muon_pt", "Muon_eta", "Muon_phi", "Muon_mass", "nMuon"})
 
           : df_os.Define("Dimuon_mass", ROOT::VecOps::InvariantMass<float>,
