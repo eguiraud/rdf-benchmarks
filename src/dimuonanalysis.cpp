@@ -6,19 +6,31 @@
 // root://eospublic.cern.ch//eos/opendata/cms/derived-data/AOD2NanoAODOutreachTool/Run2012BC_DoubleMuParked_Muons.root
 
 #include <ROOT/RDataFrame.hxx>
+#include <ROOT/RLogger.hxx>
 #include <ROOT/RNTupleDS.hxx>
 #include "ROOT/RVec.hxx"
-#include <ROOT/RLogger.hxx>
 
 #include <cstdlib> // std::abort
 #include <iostream>
 #include <string>
 
-ROOT::RDataFrame MakeRDF(const std::string &fname) {
-  if (fname.size() >= 8 && fname.substr(fname.size() - 7) == ".ntuple")
+ROOT::RDataFrame MakeRDF(const std::string &fname, long int maxBulkSize = -1) {
+  bool isNtuple =
+      fname.size() >= 8 && fname.substr(fname.size() - 7) == ".ntuple";
+
+#ifdef WITH_BULK_SIZE_PARAMETER
+  if (maxBulkSize > 0) {
+    if (isNtuple)
+      return ROOT::RDF::Experimental::FromRNTuple("Events", fname, maxBulkSize);
+    else
+      return ROOT::RDataFrame("Events", fname, {}, maxBulkSize);
+  }
+#endif
+  if (isNtuple)
     return ROOT::RDF::Experimental::FromRNTuple("Events", fname);
   else
     return ROOT::RDataFrame("Events", fname);
+  (void)maxBulkSize;
 }
 
 // A custom sinh implementation (faster than the one from glibc)
@@ -106,9 +118,14 @@ void InvMassBulkIgnoreMaskCustomSinH(
 
 int main(int argc, char **argv) {
   if (argc < 3) {
-    std::cerr << "Usage: " << argv[0] << " <n_threads> <input_file> [<use_bulk_api>]\n";
+    std::cerr << "Usage: " << argv[0] << " <n_threads> <input_file> [<use_bulk_api>] [<bulk_size>] \n";
     return 1;
   }
+
+#ifndef WITH_BULK_SIZE_PARAMETER
+   if (argc == 5)
+      std::cerr << "WARNING: bulk size will be ignored. Please recompile with -DWITH_BULK_SIZE_PARAMETER\n";
+#endif
 
   auto verbosity = ROOT::Experimental::RLogScopedVerbosity(
       ROOT::Detail::RDF::RDFLogChannel(), ROOT::Experimental::ELogLevel::kInfo);
@@ -119,14 +136,14 @@ int main(int argc, char **argv) {
     ROOT::EnableImplicitMT(n_threads);
 
   const std::string fname = argv[2];
-  auto df = MakeRDF(fname);
+  auto df = MakeRDF(fname, argc == 5 ? std::stoull(argv[4]) : -1);
 
   auto df_2mu = df.Filter([](unsigned nMuon) { return nMuon == 2; }, {"nMuon"});
   auto df_os = df_2mu.Filter(
       [](const ROOT::RVecI &charges) { return charges[0] != charges[1]; },
       {"Muon_charge"});
   auto df_mass =
-      argc == 4 && bool(std::stoi(argv[3]))
+      argc >= 4 && bool(std::stoi(argv[3]))
           ? df_os.Define(
                 "Dimuon_mass", InvMassBulkIgnoreMaskCustomSinH<float>,
                 {"Muon_pt", "Muon_eta", "Muon_phi", "Muon_mass", "nMuon"})
