@@ -18,6 +18,10 @@ add_executable(just_reading_scalars just_reading_scalars.cpp)
 target_link_libraries(just_reading_scalars PRIVATE ROOT::ROOTDataFrame)
 install(TARGETS just_reading_scalars RUNTIME)
 
+add_executable(iotools_atlas iotools_atlas.cpp)
+target_link_libraries(iotools_atlas PRIVATE ROOT::ROOTDataFrame)
+install(TARGETS iotools_atlas RUNTIME)
+
 add_executable(tree2ntuple tree2ntuple.cpp)
 target_link_libraries(tree2ntuple PRIVATE ROOT::ROOTNTupleUtil)
 install(TARGETS tree2ntuple RUNTIME)
