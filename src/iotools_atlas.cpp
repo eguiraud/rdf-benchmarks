@@ -4,9 +4,11 @@
 //
 // Input data can be downloaded from
 // https://cernbox.cern.ch/files/spaces/eos/project/r/root-eos/public/RNTuple/gg_data~zstd.root
+
 #include <Math/Vector4D.h>
 #include <ROOT/RDataFrame.hxx>
 #include <ROOT/RLogger.hxx>
+#include <ROOT/RNTupleDS.hxx>
 
 float ComputeInvariantMassRVec(const ROOT::RVecF &pt, const ROOT::RVecF &eta,
                                const ROOT::RVecF &phi, const ROOT::RVecF &e) {
@@ -14,6 +16,14 @@ float ComputeInvariantMassRVec(const ROOT::RVecF &pt, const ROOT::RVecF &eta,
   ROOT::Math::PtEtaPhiEVector p2(pt[1], eta[1], phi[1], e[1]);
   return (p1 + p2).mass() / 1000.0;
 }
+
+ROOT::RDataFrame MakeRDF(const std::string &fname) {
+  if (fname.size() >= 8 && fname.substr(fname.size() - 7) == ".ntuple")
+    return ROOT::RDF::Experimental::FromRNTuple("mini", fname);
+  else
+    return ROOT::RDataFrame("mini", fname);
+}
+
 
 int main(int argc, char **argv) {
   auto verbosity = ROOT::Experimental::RLogScopedVerbosity(
@@ -25,7 +35,7 @@ int main(int argc, char **argv) {
   }
 
   const std::string input_path = argv[2];
-  ROOT::RDataFrame df("mini", input_path);
+  auto df = MakeRDF(input_path);
 
   auto df_P = df.Filter([](bool trigP) { return trigP; }, {"trigP"});
   auto df_goodPhotons =
