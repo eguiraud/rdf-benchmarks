@@ -17,11 +17,23 @@ float ComputeInvariantMassRVec(const ROOT::RVecF &pt, const ROOT::RVecF &eta,
   return (p1 + p2).mass() / 1000.0;
 }
 
-ROOT::RDataFrame MakeRDF(const std::string &fname) {
-  if (fname.size() >= 8 && fname.substr(fname.size() - 7) == ".ntuple")
+ROOT::RDataFrame MakeRDF(const std::string &fname, long int maxBulkSize = -1) {
+  bool isNtuple =
+      fname.size() >= 8 && fname.substr(fname.size() - 7) == ".ntuple";
+
+#ifdef WITH_BULK_SIZE_PARAMETER
+  if (maxBulkSize > 0) {
+    if (isNtuple)
+      return ROOT::RDF::Experimental::FromRNTuple("mini", fname, maxBulkSize);
+    else
+      return ROOT::RDataFrame("mini", fname, {}, maxBulkSize);
+  }
+#endif
+  if (isNtuple)
     return ROOT::RDF::Experimental::FromRNTuple("mini", fname);
   else
     return ROOT::RDataFrame("mini", fname);
+  (void)maxBulkSize;
 }
 
 
@@ -30,12 +42,12 @@ int main(int argc, char **argv) {
       ROOT::Detail::RDF::RDFLogChannel(), ROOT::Experimental::ELogLevel::kInfo);
 
   if (argc < 3) {
-    std::cerr << "Usage: " << argv[0] << " <n_threads> <input_file>\n";
+    std::cerr << "Usage: " << argv[0] << " <n_threads> <input_file> [<bulk_size>]\n";
     return 1;
   }
 
   const std::string input_path = argv[2];
-  auto df = MakeRDF(input_path);
+  auto df = MakeRDF(input_path, argc == 4 ? std::stoull(argv[3]) : -1);
 
   auto df_P = df.Filter([](bool trigP) { return trigP; }, {"trigP"});
   auto df_goodPhotons =
