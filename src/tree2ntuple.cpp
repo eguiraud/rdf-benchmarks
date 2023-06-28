@@ -19,10 +19,10 @@ int main(int argc, char **argv) {
   const std::string treeName = argv[3];
   const int compressionSettings = std::stoi(argv[4]);
 
-  auto importer = RNTupleImporter::Create(input, treeName, output).Unwrap();
+  auto importer = RNTupleImporter::Create(input, treeName, output);
 
   auto options = importer->GetWriteOptions();
   options.SetCompression(compressionSettings);
   importer->SetWriteOptions(options);
-  importer->Import().ThrowOnError();
+  importer->Import();
 }
