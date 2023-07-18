@@ -6,7 +6,7 @@
 using RNTupleImporter = ROOT::Experimental::RNTupleImporter;
 
 // Usage: ./tree2ntuple <INPUT> <OUTPUT> <TREENAME> <COMPRESSION>
-// Example: ./tree2ntuple data/file.root data/file.ntuple 505 Events
+// Example: ./tree2ntuple data/file.root data/file.ntuple Events 505
 int main(int argc, char **argv) {
   if (argc < 5) {
     std::cerr
